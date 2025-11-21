@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Chess, Square, PieceSymbol, Color } from "chess.js";
+import { Chess, Square } from "chess.js";
 import { Card } from "@/components/ui/card";
 
 interface ChessBoardProps {
@@ -48,7 +48,7 @@ export const ChessBoard = ({ game, onMove, playerColor }: ChessBoardProps) => {
       if (possibleMoves.includes(square)) {
         const moves = game.moves({ square: selectedSquare, verbose: true });
         const move = moves.find((m) => m.to === square);
-        
+
         if (move) {
           onMove({
             from: selectedSquare,
@@ -76,7 +76,8 @@ export const ChessBoard = ({ game, onMove, playerColor }: ChessBoardProps) => {
     const isLight = (files.indexOf(file) + ranks.indexOf(rank)) % 2 === 0;
     const isSelected = selectedSquare === square;
     const isPossibleMove = possibleMoves.includes(square);
-    const isInCheck = game.inCheck() && piece?.type === "k" && piece.color === game.turn();
+    const isInCheck =
+      game.inCheck() && piece?.type === "k" && piece.color === game.turn();
 
     return (
       <div
@@ -97,13 +98,21 @@ export const ChessBoard = ({ game, onMove, playerColor }: ChessBoardProps) => {
           >
             <div
               className={`
-                ${piece ? "w-full h-full bg-board-highlight/30 border-4 border-board-highlight" : "w-4 h-4 rounded-full bg-board-highlight/50"}
+                ${piece
+                  ? "w-full h-full bg-board-highlight/30 border-4 border-board-highlight"
+                  : "w-4 h-4 rounded-full bg-board-highlight/50"
+                }
               `}
             />
           </div>
         )}
         {piece && (
-          <span className={`${piece.color === "w" ? "text-foreground drop-shadow-lg" : "text-background drop-shadow-lg"} z-10`}>
+          <span
+            className={`
+              ${piece.color === "w" ? "text-white" : "text-black"} 
+              drop-shadow-lg z-10
+            `}
+          >
             {pieceUnicode[piece.color + piece.type]}
           </span>
         )}

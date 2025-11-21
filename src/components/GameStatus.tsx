@@ -1,55 +1,63 @@
+// src/components/ui/GameStatus.tsx
+import React from "react";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, Trophy, Crown } from "lucide-react";
+import { AlertCircle, Trophy, Crown, Timer } from "lucide-react";
+
+type GameStatusType = "playing" | "check" | "checkmate" | "stalemate" | "draw" | "timeout";
 
 interface GameStatusProps {
-  status: "playing" | "checkmate" | "stalemate" | "draw" | "check";
+  status: GameStatusType;
   currentTurn: "white" | "black";
   winner?: "white" | "black" | "draw";
+  reason?: string;
 }
 
-export const GameStatus = ({ status, currentTurn, winner }: GameStatusProps) => {
-  const getStatusMessage = () => {
-    switch (status) {
-      case "checkmate":
-        return {
-          icon: <Trophy className="h-5 w-5 text-primary" />,
-          message: `Checkmate! ${winner === "white" ? "White" : "Black"} wins!`,
-          className: "bg-primary/10 border-primary",
-        };
-      case "stalemate":
-        return {
-          icon: <AlertCircle className="h-5 w-5 text-muted-foreground" />,
-          message: "Stalemate! Game is a draw.",
-          className: "bg-muted/50 border-muted",
-        };
-      case "draw":
-        return {
-          icon: <AlertCircle className="h-5 w-5 text-muted-foreground" />,
-          message: "Game drawn by agreement.",
-          className: "bg-muted/50 border-muted",
-        };
-      case "check":
-        return {
-          icon: <AlertCircle className="h-5 w-5 text-destructive" />,
-          message: `${currentTurn === "white" ? "White" : "Black"} is in check!`,
-          className: "bg-destructive/10 border-destructive",
-        };
-      default:
-        return {
-          icon: <Crown className="h-5 w-5 text-foreground" />,
-          message: `${currentTurn === "white" ? "White" : "Black"} to move`,
-          className: "bg-card border-border",
-        };
-    }
+export const GameStatus: React.FC<GameStatusProps> = ({
+  status,
+  currentTurn,
+  winner,
+  reason,
+}) => {
+  const config = {
+    playing: {
+      icon: <Crown className="h-6 w-6 text-primary" />,
+      message: `${currentTurn === "white" ? "White" : "Black"} to move`,
+      className: "bg-primary/10 border-primary/50",
+    },
+    check: {
+      icon: <AlertCircle className="h-6 w-6 text-destructive" />,
+      message: `${currentTurn === "white" ? "White" : "Black"} is in check!`,
+      className: "bg-destructive/10 border-destructive animate-pulse",
+    },
+    checkmate: {
+      icon: <Trophy className="h-6 w-6 text-yellow-500" />,
+      message: winner === "white" ? "White wins by checkmate!" : "Black wins by checkmate!",
+      className: "bg-yellow-500/10 border-yellow-500 shadow-lg",
+    },
+    timeout: {
+      icon: <Timer className="h-6 w-6 text-red-500 animate-pulse" />,
+      message: winner === "white" ? "White wins on time!" : "Black wins on time!",
+      className: "bg-red-500/10 border-red-500 shadow-lg",
+    },
+    stalemate: {
+      icon: <AlertCircle className="h-6 w-6 text-orange-500" />,
+      message: "Stalemate – Draw!",
+      className: "bg-orange-500/10 border-orange-500",
+    },
+    draw: {
+      icon: <AlertCircle className="h-6 w-6 text-muted-foreground" />,
+      message: reason ? `${reason} – Draw` : "Draw",
+      className: "bg-muted/50 border-muted",
+    },
   };
 
-  const statusInfo = getStatusMessage();
+  const { icon, message, className } = config[status];
 
   return (
-    <Card className={`p-4 ${statusInfo.className} transition-all`}>
-      <div className="flex items-center gap-3">
-        {statusInfo.icon}
-        <p className="text-base font-semibold text-foreground">{statusInfo.message}</p>
+    <Card className={`p-5 ${className} transition-all duration-300`} aria-live="polite">
+      <div className="flex items-center gap-4">
+        {icon}
+        <p className="text-lg font-bold">{message}</p>
       </div>
     </Card>
   );

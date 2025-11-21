@@ -1,19 +1,44 @@
+// src/hooks/useIsMobile.ts
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
+export function useIsMobile(): boolean {
+  const getIsMobile = () => window.innerWidth < MOBILE_BREAKPOINT;
+
+  const [isMobile, setIsMobile] = React.useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return getIsMobile();
+    }
+    return false;
+  });
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+
+    const update = () => setIsMobile(getIsMobile());
+
+    // Modern browsers
+    if (mql.addEventListener) {
+      mql.addEventListener("change", update);
+    } else {
+      // Safari fallback
+      mql.addListener(update);
+    }
+
+    // Run once to sync
+    update();
+
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener("change", update);
+      } else {
+        mql.removeListener(update);
+      }
     };
-    mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }

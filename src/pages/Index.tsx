@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type GameMode = "human-vs-human" | "human-vs-computer";
 type Difficulty = "easy" | "medium" | "hard";
-type TimeControl = "blitz-3" | "blitz-5" | "rapid-10" | "classical-30";
+type TimeControl = "blitz-3" | "blitz-5" | "rapid-10" | "classical-30" | "unlimited";
 
 // THIS WAS MISSING — NOW FIXED
 const getTimeControlSeconds = (control: TimeControl): number => {
@@ -20,7 +20,8 @@ const getTimeControlSeconds = (control: TimeControl): number => {
     "blitz-3": 3 * 60,
     "blitz-5": 5 * 60,
     "rapid-10": 10 * 60,
-    "classical-30": 30 *  60,
+    "classical-30": 30 * 60,
+    "unlimited": Infinity,
   };
   return map[control];
 };
@@ -40,6 +41,9 @@ export default function Index() {
   const [whiteTime, setWhiteTime] = useState(getTimeControlSeconds("blitz-5"));
   const [blackTime, setBlackTime] = useState(getTimeControlSeconds("blitz-5"));
   const [activeTimer, setActiveTimer] = useState<"white" | "black" | null>(null);
+
+  // Pause state
+  const [isPaused, setIsPaused] = useState(false);
 
   // THIS IS THE MAGIC LINE THAT FIXES THE TIMER RESET
   const [gameKey, setGameKey] = useState(0);
@@ -83,7 +87,8 @@ export default function Index() {
   // Simple computer AI
   const makeComputerMove = useCallback(() => {
     const g = gameRef.current;
-    if (g.isGameOver() || g.turn() !== "b") return;
+    // Don't move if game over, paused, or not black's turn
+    if (g.isGameOver() || g.turn() !== "b" || isPaused) return;
 
     const moves = g.moves();
     if (moves.length === 0) return;
@@ -95,18 +100,18 @@ export default function Index() {
       pushMove(result.san);
       checkGameOver();
     }
-  }, [pushMove, checkGameOver]);
+  }, [pushMove, checkGameOver, isPaused]);
 
   // Computer move when it's black's turn
   useEffect(() => {
-    if (gameMode === "human-vs-computer" && gameRef.current.turn() === "b" && !gameRef.current.isGameOver()) {
+    if (gameMode === "human-vs-computer" && gameRef.current.turn() === "b" && !gameRef.current.isGameOver() && !isPaused) {
       const timer = setTimeout(makeComputerMove, 800);
       return () => clearTimeout(timer);
     }
-  }, [fen, gameMode, makeComputerMove]);
+  }, [fen, gameMode, makeComputerMove, isPaused]);
 
   const handleMove = useCallback((move: { from: string; to: string; promotion?: string }) => {
-    if (gameRef.current.isGameOver()) return;
+    if (gameRef.current.isGameOver() || isPaused) return;
 
     const result = gameRef.current.move({
       from: move.from,
@@ -118,7 +123,7 @@ export default function Index() {
       pushMove(result.san);
       checkGameOver();
     }
-  }, [pushMove, checkGameOver]);
+  }, [pushMove, checkGameOver, isPaused]);
 
   // NEW GAME — Now properly resets timers!
   const handleNewGame = useCallback(() => {
@@ -128,6 +133,7 @@ export default function Index() {
     setWinner(undefined);
     setGameOverReason("");
     setCurrentTurn("white");
+    setIsPaused(false);
 
     const secs = getTimeControlSeconds(timeControl);
     setWhiteTime(secs);
@@ -151,10 +157,10 @@ export default function Index() {
 
   const gameStatus = winner
     ? gameOverReason === "Timeout" ? "timeout" as const
-    : gameOverReason === "Checkmate" ? "checkmate" as const
-    : "draw" as const
+      : gameOverReason === "Checkmate" ? "checkmate" as const
+        : "draw" as const
     : gameRef.current.inCheck() ? "check" as const
-    : "playing" as const;
+      : "playing" as const;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -167,7 +173,7 @@ export default function Index() {
           <div className="lg:col-span-3 space-y-6">
             <GameControls
               onNewGame={handleNewGame}
-              onToggleSettings={() => {}}
+              onToggleSettings={() => { }}
               gameMode={gameMode}
               onGameModeChange={setGameMode}
               difficulty={difficulty}
@@ -190,7 +196,7 @@ export default function Index() {
           <div className="lg:col-span-6 space-y-6">
             <GameStatus status={gameStatus} currentTurn={currentTurn} winner={winner} reason={winner ? gameOverReason : undefined} />
             <ChessBoard game={gameRef.current} onMove={handleMove} playerColor="white" />
-            
+
             {/* WHITE TIMER — NOW WITH key= FOR FULL RESET */}
             <GameTimer
               key={`white-${gameKey}`}

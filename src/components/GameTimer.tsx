@@ -6,6 +6,7 @@ import { Clock } from "lucide-react";
 interface GameTimerProps {
   initialTime: number; // seconds
   isActive: boolean;
+  isPaused: boolean;
   player: "white" | "black";
   onTimeUp: () => void;
 }
@@ -13,6 +14,7 @@ interface GameTimerProps {
 export const GameTimer: React.FC<GameTimerProps> = ({
   initialTime,
   isActive,
+  isPaused,
   player,
   onTimeUp,
 }) => {
@@ -33,7 +35,8 @@ export const GameTimer: React.FC<GameTimerProps> = ({
       intervalRef.current = null;
     }
 
-    if (!isActive) return;
+    // Do nothing if not active (not my turn), paused, or if time is unlimited
+    if (!isActive || isPaused || initialTime === Infinity) return;
 
     intervalRef.current = window.setInterval(() => {
       setTimeLeft((prev) => {
@@ -54,19 +57,23 @@ export const GameTimer: React.FC<GameTimerProps> = ({
         intervalRef.current = null;
       }
     };
-  }, [isActive, onTimeUp]);
+  }, [isActive, isPaused, initialTime, onTimeUp]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const isCritical = timeLeft < 30 && isActive;
+  const isCritical = timeLeft < 30 && isActive && initialTime !== Infinity;
+
+  const displayTime =
+    initialTime === Infinity
+      ? "∞"
+      : `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
   return (
     <Card
-      className={`p-4 transition-all duration-300 ${
-        isActive
+      className={`p-4 transition-all duration-300 ${isActive
           ? "bg-primary/10 border-primary shadow-lg"
           : "bg-muted border-border"
-      }`}
+        }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -75,12 +82,11 @@ export const GameTimer: React.FC<GameTimerProps> = ({
         </div>
 
         <div
-          className={`text-3xl font-bold font-mono ${
-            isCritical ? "text-destructive animate-pulse" : "text-foreground"
-          }`}
+          className={`text-3xl font-bold font-mono ${isCritical ? "text-destructive animate-pulse" : "text-foreground"
+            }`}
           aria-live="polite"
         >
-          {minutes}:{seconds.toString().padStart(2, "0")}
+          {displayTime}
         </div>
       </div>
     </Card>

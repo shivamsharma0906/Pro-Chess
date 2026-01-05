@@ -1,4 +1,5 @@
 // src/components/ui/GameControls.tsx
+import { GameGuide } from "@/components/GameGuide";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -8,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Play, Settings } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 
 interface GameControlsProps {
   onNewGame: () => void;
@@ -17,19 +18,24 @@ interface GameControlsProps {
   onGameModeChange: (mode: "human-vs-human" | "human-vs-computer") => void;
   difficulty: "easy" | "medium" | "hard";
   onDifficultyChange: (difficulty: "easy" | "medium" | "hard") => void;
-  timeControl: "blitz-3" | "blitz-5" | "rapid-10" | "classical-30";
-  onTimeControlChange: (control: "blitz-3" | "blitz-5" | "rapid-10" | "classical-30") => void;
+  timeControl: "blitz-3" | "blitz-5" | "rapid-10" | "classical-30" | "unlimited";
+  onTimeControlChange: (control: "blitz-3" | "blitz-5" | "rapid-10" | "classical-30" | "unlimited") => void;
+  isPaused: boolean;
+  onTogglePause: () => void;
+  isGameActive: boolean;
 }
 
 export const GameControls = ({
   onNewGame,
-  onToggleSettings,
   gameMode,
   onGameModeChange,
   difficulty,
   onDifficultyChange,
   timeControl,
   onTimeControlChange,
+  isPaused,
+  onTogglePause,
+  isGameActive,
 }: GameControlsProps) => {
   return (
     <Card className="p-6 bg-card border border-border shadow-lg space-y-6">
@@ -76,6 +82,7 @@ export const GameControls = ({
             <SelectItem value="blitz-5">Blitz (5+0)</SelectItem>
             <SelectItem value="rapid-10">Rapid (10+0)</SelectItem>
             <SelectItem value="classical-30">Classical (30+0)</SelectItem>
+            <SelectItem value="unlimited">Freestyle (∞)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -86,9 +93,14 @@ export const GameControls = ({
           <Play className="mr-2 h-5 w-5" />
           New Game
         </Button>
-        <Button onClick={onToggleSettings} size="lg" variant="outline">
-          <Settings className="h-5 w-5" />
-        </Button>
+
+        {isGameActive && timeControl !== "unlimited" && (
+          <Button onClick={onTogglePause} size="icon" variant="outline" title={isPaused ? "Resume" : "Pause"}>
+            {isPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+          </Button>
+        )}
+
+        <GameGuide />
       </div>
     </Card>
   );
